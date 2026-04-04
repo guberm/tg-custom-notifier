@@ -161,5 +161,28 @@ class ChatListActivity : AppCompatActivity() {
             listAdapter!!.addAll(currentChatsToDisplay)
             listView.setSelectionFromTop(firstVisible, offset)
         }
+
+        updateTabCounts(searchQuery, showEnabledOnly)
+    }
+
+    private fun updateTabCounts(searchQuery: String, showEnabledOnly: Boolean) {
+        val types = listOf(TgClient.ChatType.USER, TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL)
+        val labels = listOf("Chats", "Groups", "Channels")
+        val isFiltered = searchQuery.isNotEmpty() || showEnabledOnly
+
+        for (i in types.indices) {
+            val total = allChats.count { it.type == types[i] }
+            val tab = tabLayout.getTabAt(i) ?: continue
+            tab.text = if (!isFiltered) {
+                "${labels[i]} ($total)"
+            } else {
+                val current = allChats.count { chat ->
+                    chat.type == types[i] &&
+                    (searchQuery.isEmpty() || chat.title.lowercase().contains(searchQuery) || chat.username.lowercase().contains(searchQuery)) &&
+                    (!showEnabledOnly || favChats.contains(chat.id))
+                }
+                "${labels[i]} ($current/$total)"
+            }
+        }
     }
 }
