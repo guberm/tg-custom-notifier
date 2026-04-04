@@ -13,6 +13,10 @@ import androidx.core.app.NotificationCompat
 
 class NotifierService : Service() {
 
+    companion object {
+        var isRunning = false
+    }
+
     private val CHANNEL_ID = "TgNotifierServiceChannel"
     private val MSG_CHANNEL_ID = "TgMessageNotificationChannel"
     private var wakeLock: PowerManager.WakeLock? = null
@@ -34,6 +38,7 @@ class NotifierService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isRunning = true
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Telegram Notifier Running")
             .setContentText("Listening to new messages from selected chats/groups/channels")
@@ -70,6 +75,7 @@ class NotifierService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isRunning = false
         wakeLock?.let { if (it.isHeld) it.release() }
     }
 

@@ -3,40 +3,102 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@color/bg_dark">
 
-    <TextView 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content" 
-        android:text="Select Chats for Notifications" 
-        android:textSize="18sp" 
-        android:padding="16dp" />
-
+    <!-- Top bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:gravity="center_vertical">
-        <EditText
-            android:id="@+id/editSearch"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:hint="Search chats..."
-            android:inputType="text"
-            android:maxLines="1" />
-        <CheckBox
-            android:id="@+id/checkShowEnabled"
+        android:orientation="vertical"
+        android:background="@color/bg_surface"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp">
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Enabled Only" />
+            android:text="Notifications"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Search + toggle row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <!-- Search field -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="42dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_search"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginEnd="10dp">
+
+                <TextView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:text="🔍"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="8dp" />
+
+                <EditText
+                    android:id="@+id/editSearch"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:hint="Search chats..."
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:background="@android:color/transparent"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="@color/text_secondary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- Enabled only toggle -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <CheckBox
+                    android:id="@+id/checkShowEnabled"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Enabled"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:buttonTint="@color/accent_blue" />
+            </LinearLayout>
+
+        </LinearLayout>
+
     </LinearLayout>
 
+    <!-- Tabs -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutChats"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="48dp"
+        android:background="@color/bg_surface"
+        app:tabIndicatorColor="@color/accent_blue"
+        app:tabSelectedTextColor="@color/accent_blue"
+        app:tabTextColor="@color/text_secondary"
+        app:tabIndicatorFullWidth="false"
+        app:tabMode="fixed">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
@@ -55,9 +117,20 @@
 
     </com.google.android.material.tabs.TabLayout>
 
-    <ListView 
-        android:id="@+id/listViewChats" 
-        android:layout_width="match_parent" 
-        android:layout_height="match_parent" />
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+
+    <!-- Chat list -->
+    <ListView
+        android:id="@+id/listViewChats"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/bg_dark"
+        android:divider="@color/divider"
+        android:dividerHeight="1dp"
+        android:scrollbarStyle="outsideOverlay" />
 
 </LinearLayout>

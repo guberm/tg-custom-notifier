@@ -9,7 +9,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.View
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -24,35 +26,60 @@ class MainActivity : AppCompatActivity() {
 
         TgClient.initialize(filesDir.absolutePath)
 
-        findViewById<Button>(R.id.btnAuth).setOnClickListener {
+        findViewById<View>(R.id.btnAuth).setOnClickListener {
             startActivity(Intent(this, AuthActivity::class.java))
         }
 
-        findViewById<Button>(R.id.btnSetupChats).setOnClickListener {
+        findViewById<View>(R.id.btnSetupChats).setOnClickListener {
             startActivity(Intent(this, ChatListActivity::class.java))
         }
 
-        findViewById<Button>(R.id.btnStartService).setOnClickListener {
+        findViewById<View>(R.id.btnStartService).setOnClickListener {
             val serviceIntent = Intent(this, NotifierService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 startForegroundService(serviceIntent)
             } else {
                 startService(serviceIntent)
             }
-            Toast.makeText(this, "Service Started!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Service started", Toast.LENGTH_SHORT).show()
+            updateStatusIndicators()
         }
 
         findViewById<Button>(R.id.btnDisableBatteryOpt).setOnClickListener {
-            val packageName = packageName
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                val intent = Intent()
-                intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
                 intent.data = Uri.parse("package:$packageName")
                 startActivity(intent)
             } else {
-                Toast.makeText(this, "Optimization already disabled", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Battery optimization already disabled", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateStatusIndicators()
+    }
+
+    private fun updateStatusIndicators() {
+        val tvAuth = findViewById<TextView>(R.id.tvAuthStatus)
+        val tvService = findViewById<TextView>(R.id.tvServiceStatus)
+
+        if (TgClient.currentAuthState == TgClient.AuthState.READY) {
+            tvAuth.text = "● Authorized"
+            tvAuth.setTextColor(ContextCompat.getColor(this, R.color.color_on))
+        } else {
+            tvAuth.text = "● Not authorized"
+            tvAuth.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+        }
+
+        if (NotifierService.isRunning) {
+            tvService.text = "● Service active"
+            tvService.setTextColor(ContextCompat.getColor(this, R.color.color_on))
+        } else {
+            tvService.text = "● Service stopped"
+            tvService.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
         }
     }
 
