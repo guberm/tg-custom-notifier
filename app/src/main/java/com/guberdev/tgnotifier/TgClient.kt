@@ -199,6 +199,13 @@ object TgClient {
         }.start()
     }
 
+    fun logOut() {
+        client?.send(TdApi.LogOut()) { }
+        client = null
+        cachedChats.clear()
+        currentAuthState = AuthState.WAITING_PARAMETERS
+    }
+
     fun searchRemote(query: String) {
         if (query.length < 2) return
         client?.send(TdApi.SearchChatsOnServer(query, 50)) { result ->

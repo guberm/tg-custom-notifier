@@ -254,7 +254,18 @@
             android:layout_height="wrap_content"
             android:text="Disable Battery Optimization"
             style="@style/Widget.Material3.Button.OutlinedButton"
-            android:textColor="@color/text_secondary" />
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="10dp" />
+
+        <!-- Log out -->
+        <Button
+            android:id="@+id/btnLogOut"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log Out from Telegram"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:textColor="#E57373"
+            android:strokeColor="#E57373" />
 
     </LinearLayout>
 </ScrollView>

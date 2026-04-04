@@ -45,6 +45,19 @@ class MainActivity : AppCompatActivity() {
             updateStatusIndicators()
         }
 
+        findViewById<Button>(R.id.btnLogOut).setOnClickListener {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Log Out")
+                .setMessage("Log out from Telegram? You will need to re-authorize.")
+                .setPositiveButton("Log Out") { _, _ ->
+                    TgClient.logOut()
+                    updateStatusIndicators()
+                    Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
         findViewById<Button>(R.id.btnDisableBatteryOpt).setOnClickListener {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
