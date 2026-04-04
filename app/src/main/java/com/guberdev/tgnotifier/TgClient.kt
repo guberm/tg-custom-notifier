@@ -212,6 +212,6 @@ object TgClient {
         if (cachedChats.isEmpty()) {
             fetchRemoteChats() // Force fetch if empty
         }
-        callback(cachedChats)
+        callback(cachedChats.toList())
     }
 }
