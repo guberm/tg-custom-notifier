@@ -10,10 +10,7 @@ captures/
 .cxx
 
 # Python scripts
-generate_project.py
-generate_ui_logic.py
-update_tabs.py
-translate_ui.py
+*.py
 __pycache__/
 
 # Keystore files
