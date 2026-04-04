@@ -1,0 +1,34 @@
+com.michael.tgnotifier.app-viewpager2-1.0.0-0 C:\Users\michael.guber\.gradle\caches\8.14\transforms\05ebad904457f24088d3c9da7f260a2d\transformed\viewpager2-1.0.0\res
+com.michael.tgnotifier.app-lifecycle-runtime-2.6.1-1 C:\Users\michael.guber\.gradle\caches\8.14\transforms\077039cbd6316f0111fd9dda97b997bc\transformed\lifecycle-runtime-2.6.1\res
+com.michael.tgnotifier.app-core-ktx-1.12.0-2 C:\Users\michael.guber\.gradle\caches\8.14\transforms\1c6192b2ad94bfc60f1ea7bcbd09b062\transformed\core-ktx-1.12.0\res
+com.michael.tgnotifier.app-transition-1.2.0-3 C:\Users\michael.guber\.gradle\caches\8.14\transforms\1eab0808d3b771a8e17316942f55198d\transformed\transition-1.2.0\res
+com.michael.tgnotifier.app-appcompat-1.6.1-4 C:\Users\michael.guber\.gradle\caches\8.14\transforms\23bde3ac23d2e1390992a7f3de40cc43\transformed\appcompat-1.6.1\res
+com.michael.tgnotifier.app-activity-1.8.0-5 C:\Users\michael.guber\.gradle\caches\8.14\transforms\3b32dbe9a707509b863a3ffe8f45da1a\transformed\activity-1.8.0\res
+com.michael.tgnotifier.app-core-runtime-2.2.0-6 C:\Users\michael.guber\.gradle\caches\8.14\transforms\3fad9daae40858b07b18d67020e2c830\transformed\core-runtime-2.2.0\res
+com.michael.tgnotifier.app-recyclerview-1.1.0-7 C:\Users\michael.guber\.gradle\caches\8.14\transforms\443ced98d024f3465a88ca84ad895597\transformed\recyclerview-1.1.0\res
+com.michael.tgnotifier.app-fragment-1.3.6-8 C:\Users\michael.guber\.gradle\caches\8.14\transforms\4f446c9d6897a882175fcc3552671b69\transformed\fragment-1.3.6\res
+com.michael.tgnotifier.app-emoji2-1.2.0-9 C:\Users\michael.guber\.gradle\caches\8.14\transforms\4faf325dae03ec8281f5a0639524db8a\transformed\emoji2-1.2.0\res
+com.michael.tgnotifier.app-material-1.11.0-10 C:\Users\michael.guber\.gradle\caches\8.14\transforms\5359b698de6840745d8af039035323b0\transformed\material-1.11.0\res
+com.michael.tgnotifier.app-lifecycle-viewmodel-2.6.1-11 C:\Users\michael.guber\.gradle\caches\8.14\transforms\5515dbcbf01aebccc65a082353fb782e\transformed\lifecycle-viewmodel-2.6.1\res
+com.michael.tgnotifier.app-lifecycle-livedata-2.6.1-12 C:\Users\michael.guber\.gradle\caches\8.14\transforms\5bbd67b1d6b0f621272b2e5da09fb325\transformed\lifecycle-livedata-2.6.1\res
+com.michael.tgnotifier.app-lifecycle-livedata-core-2.6.1-13 C:\Users\michael.guber\.gradle\caches\8.14\transforms\5f1044cd2f16fc4a5d3dcfc64702d32b\transformed\lifecycle-livedata-core-2.6.1\res
+com.michael.tgnotifier.app-lifecycle-process-2.6.1-14 C:\Users\michael.guber\.gradle\caches\8.14\transforms\63581525adf860cc0f0f17097c75821c\transformed\lifecycle-process-2.6.1\res
+com.michael.tgnotifier.app-lifecycle-viewmodel-savedstate-2.6.1-15 C:\Users\michael.guber\.gradle\caches\8.14\transforms\63b687cdb075df955e689b50c5fa34bc\transformed\lifecycle-viewmodel-savedstate-2.6.1\res
+com.michael.tgnotifier.app-annotation-experimental-1.3.0-16 C:\Users\michael.guber\.gradle\caches\8.14\transforms\6cb6793e3c189140d755ee47752fe4bd\transformed\annotation-experimental-1.3.0\res
+com.michael.tgnotifier.app-core-1.12.0-17 C:\Users\michael.guber\.gradle\caches\8.14\transforms\7a0cb0a5476081bad58c057f6a0d04fa\transformed\core-1.12.0\res
+com.michael.tgnotifier.app-coordinatorlayout-1.1.0-18 C:\Users\michael.guber\.gradle\caches\8.14\transforms\8ae0b00a112b419099f23445724f5519\transformed\coordinatorlayout-1.1.0\res
+com.michael.tgnotifier.app-constraintlayout-2.1.4-19 C:\Users\michael.guber\.gradle\caches\8.14\transforms\8c828db928038eaae79b992326048b78\transformed\constraintlayout-2.1.4\res
+com.michael.tgnotifier.app-cardview-1.0.0-20 C:\Users\michael.guber\.gradle\caches\8.14\transforms\8f52588b26d294b8d281ee0d4b34ac79\transformed\cardview-1.0.0\res
+com.michael.tgnotifier.app-drawerlayout-1.1.1-21 C:\Users\michael.guber\.gradle\caches\8.14\transforms\912ffe3125eaa66a334f94a32306c657\transformed\drawerlayout-1.1.1\res
+com.michael.tgnotifier.app-emoji2-views-helper-1.2.0-22 C:\Users\michael.guber\.gradle\caches\8.14\transforms\96f2f44ecbeb4a4b23f69aeb81e1d448\transformed\emoji2-views-helper-1.2.0\res
+com.michael.tgnotifier.app-profileinstaller-1.3.0-23 C:\Users\michael.guber\.gradle\caches\8.14\transforms\e2af3b7055aeb91930b577576f7801de\transformed\profileinstaller-1.3.0\res
+com.michael.tgnotifier.app-appcompat-resources-1.6.1-24 C:\Users\michael.guber\.gradle\caches\8.14\transforms\f1001171c1b2fc356d5a23f5239c1fa5\transformed\appcompat-resources-1.6.1\res
+com.michael.tgnotifier.app-startup-runtime-1.1.1-25 C:\Users\michael.guber\.gradle\caches\8.14\transforms\f3b103755205aeb8602d1a91bd07c845\transformed\startup-runtime-1.1.1\res
+com.michael.tgnotifier.app-savedstate-1.2.1-26 C:\Users\michael.guber\.gradle\caches\8.14\transforms\fb90c090566ab96be0b8607a10bae4c4\transformed\savedstate-1.2.1\res
+com.michael.tgnotifier.app-pngs-27 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\build\generated\res\pngs\debug
+com.michael.tgnotifier.app-resValues-28 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\build\generated\res\resValues\debug
+com.michael.tgnotifier.app-packageDebugResources-29 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\build\intermediates\incremental\debug\packageDebugResources\merged.dir
+com.michael.tgnotifier.app-packageDebugResources-30 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\build\intermediates\incremental\debug\packageDebugResources\stripped.dir
+com.michael.tgnotifier.app-merged_res-31 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\build\intermediates\merged_res\debug
+com.michael.tgnotifier.app-debug-32 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\src\debug\res
+com.michael.tgnotifier.app-main-33 C:\Users\michael.guber\Desktop\my repos\Telegram Notifier\app\src\main\res

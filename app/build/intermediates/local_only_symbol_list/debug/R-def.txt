@@ -1,0 +1,16 @@
+R_DEF: Internal format may change without notice
+local
+id btnAuth
+id btnDisableBatteryOpt
+id btnSendCode
+id btnSendPhone
+id btnSetupChats
+id btnStartService
+id editCode
+id editPhone
+id listViewChats
+id tabLayoutChats
+layout activity_auth
+layout activity_chat_list
+layout activity_main
+string app_name
