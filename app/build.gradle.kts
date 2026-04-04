@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.michael.tgnotifier"
+    namespace = "com.guberdev.tgnotifier"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.michael.tgnotifier"
+        applicationId = "com.guberdev.tgnotifier"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

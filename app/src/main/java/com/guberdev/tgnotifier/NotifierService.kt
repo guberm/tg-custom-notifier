@@ -1,4 +1,4 @@
-package com.michael.tgnotifier
+package com.guberdev.tgnotifier
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -25,10 +25,10 @@ class NotifierService : Service() {
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TgNotifier::BackgroundWakelock")
         wakeLock?.acquire(10*60*1000L /*10 minutes*/) 
 
-        TgClient.newMessageCallback = { chatId, text ->
+        TgClient.newMessageCallback = { chatId, title, username, text ->
             val favs = PreferencesHelper.getFavoriteChats(this)
             if (favs.contains(chatId)) {
-                sendLocalNotification("New message in $chatId", text)
+                sendLocalNotification(title, text, username, chatId)
             }
         }
     }
@@ -43,12 +43,26 @@ class NotifierService : Service() {
         return START_STICKY
     }
 
-    private fun sendLocalNotification(title: String, text: String) {
+    private fun sendLocalNotification(title: String, text: String, username: String, chatId: Long) {
+        val intent = if (username.isNotEmpty()) {
+            Intent(Intent.ACTION_VIEW, android.net.Uri.parse("tg://resolve?domain=$username"))
+        } else {
+            val i = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("tg://user?id=$chatId"))
+            i.setPackage("org.telegram.messenger")
+            i
+        }
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            this, chatId.toInt(), intent, 
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notif = NotificationCompat.Builder(this, MSG_CHANNEL_ID)
-            .setContentTitle(title)
+            .setContentTitle("New message from $title")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_email)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
             .build()
         val manager = getSystemService(NotificationManager::class.java)
         manager?.notify((System.currentTimeMillis() % 10000).toInt(), notif)

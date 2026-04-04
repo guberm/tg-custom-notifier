@@ -1,4 +1,4 @@
-package com.michael.tgnotifier
+package com.guberdev.tgnotifier
 
 import android.content.Context
 import android.content.SharedPreferences

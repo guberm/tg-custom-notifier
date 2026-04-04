@@ -1,4 +1,4 @@
-package com.michael.tgnotifier
+package com.guberdev.tgnotifier
 
 import android.util.Log
 import org.drinkless.tdlib.Client
@@ -21,7 +21,8 @@ object TgClient {
     data class ChatInfo(val id: Long, var title: String, val type: ChatType, var username: String = "")
 
     var authStateCallback: ((AuthState) -> Unit)? = null
-    var newMessageCallback: ((Long, String) -> Unit)? = null
+    var newMessageCallback: ((Long, String, String, String) -> Unit)? = null
+
     var currentAuthState: AuthState = AuthState.WAITING_PARAMETERS
     
     private var client: Client? = null
@@ -47,7 +48,11 @@ object TgClient {
                 val msgUpdate = update as TdApi.UpdateNewMessage
                 if (msgUpdate.message.content is TdApi.MessageText) {
                     val text = (msgUpdate.message.content as TdApi.MessageText).text.text
-                    newMessageCallback?.invoke(msgUpdate.message.chatId, text)
+                    val chatId = msgUpdate.message.chatId
+                    val chatInfo = cachedChats.find { it.id == chatId }
+                    val title = chatInfo?.title ?: "Chat $chatId"
+                    val username = chatInfo?.username ?: ""
+                    newMessageCallback?.invoke(chatId, title, username, text)
                 }
             }
             TdApi.UpdateChatTitle.CONSTRUCTOR -> {

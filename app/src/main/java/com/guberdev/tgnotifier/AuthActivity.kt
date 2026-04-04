@@ -1,4 +1,4 @@
-package com.michael.tgnotifier
+package com.guberdev.tgnotifier
 
 import android.os.Bundle
 import android.widget.Button

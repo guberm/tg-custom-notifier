@@ -1,4 +1,4 @@
-package com.michael.tgnotifier
+package com.guberdev.tgnotifier
 
 import android.Manifest
 import android.content.Context
