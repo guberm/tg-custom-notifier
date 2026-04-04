@@ -45,6 +45,7 @@ class ChatListActivity : AppCompatActivity() {
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
+                listAdapter = null
                 updateListForTab(tab.position)
             }
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
@@ -82,13 +83,15 @@ class ChatListActivity : AppCompatActivity() {
         }
     }
 
+    private var listAdapter: ArrayAdapter<String>? = null
+
     private fun updateListForTab(tabIndex: Int) {
         val targetType = when (tabIndex) {
             0 -> TgClient.ChatType.USER
             1 -> TgClient.ChatType.GROUP
             else -> TgClient.ChatType.CHANNEL
         }
-        
+
         val searchQuery = editSearch.text.toString().lowercase()
         val showEnabledOnly = checkShowEnabled.isChecked
 
@@ -97,11 +100,22 @@ class ChatListActivity : AppCompatActivity() {
             (searchQuery.isEmpty() || it.title.lowercase().contains(searchQuery) || it.username.lowercase().contains(searchQuery)) &&
             (!showEnabledOnly || favChats.contains(it.id))
         }.sortedBy { it.title.lowercase() }
-        
-        val adapterMap = currentChatsToDisplay.map { 
+
+        val adapterMap = currentChatsToDisplay.map {
             val subtitle = if (it.username.isNotEmpty()) " (@${it.username})" else ""
-            "${it.title}$subtitle " + if (favChats.contains(it.id)) "[ON]" else "[OFF]" 
+            "${it.title}$subtitle " + if (favChats.contains(it.id)) "[ON]" else "[OFF]"
         }
-        listView.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, adapterMap)
+
+        val firstVisible = listView.firstVisiblePosition
+        val offset = listView.getChildAt(0)?.top ?: 0
+
+        if (listAdapter == null) {
+            listAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, adapterMap)
+            listView.adapter = listAdapter
+        } else {
+            listAdapter!!.clear()
+            listAdapter!!.addAll(adapterMap)
+            listView.setSelectionFromTop(firstVisible, offset)
+        }
     }
 }
