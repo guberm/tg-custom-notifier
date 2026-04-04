@@ -21,6 +21,7 @@ object TgClient {
     data class ChatInfo(val id: Long, var title: String, val type: ChatType, var username: String = "")
 
     var authStateCallback: ((AuthState) -> Unit)? = null
+    var onAuthStateChanged: ((AuthState) -> Unit)? = null  // secondary listener (MainActivity status)
     var newMessageCallback: ((Long, String, String, String) -> Unit)? = null
 
     var currentAuthState: AuthState = AuthState.WAITING_PARAMETERS
@@ -125,18 +126,22 @@ object TgClient {
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 currentAuthState = AuthState.WAITING_PHONE
                 authStateCallback?.invoke(currentAuthState)
+                onAuthStateChanged?.invoke(currentAuthState)
             }
             TdApi.AuthorizationStateWaitCode.CONSTRUCTOR -> {
                 currentAuthState = AuthState.WAITING_CODE
                 authStateCallback?.invoke(currentAuthState)
+                onAuthStateChanged?.invoke(currentAuthState)
             }
             TdApi.AuthorizationStateWaitPassword.CONSTRUCTOR -> {
                 currentAuthState = AuthState.WAITING_PASSWORD
                 authStateCallback?.invoke(currentAuthState)
+                onAuthStateChanged?.invoke(currentAuthState)
             }
             TdApi.AuthorizationStateReady.CONSTRUCTOR -> {
                 currentAuthState = AuthState.READY
                 authStateCallback?.invoke(currentAuthState)
+                onAuthStateChanged?.invoke(currentAuthState)
                 Log.d("TgClient", "TDLib is authorized and ready!")
                 // Pre-fetch chats
                 fetchRemoteChats()
@@ -144,6 +149,7 @@ object TgClient {
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
                 currentAuthState = AuthState.LOGGED_OUT
                 authStateCallback?.invoke(currentAuthState)
+                onAuthStateChanged?.invoke(currentAuthState)
             }
         }
     }

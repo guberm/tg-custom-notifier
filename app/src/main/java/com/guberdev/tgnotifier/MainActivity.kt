@@ -59,7 +59,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        TgClient.onAuthStateChanged = { runOnUiThread { updateStatusIndicators() } }
         updateStatusIndicators()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        TgClient.onAuthStateChanged = null
     }
 
     private fun updateStatusIndicators() {
