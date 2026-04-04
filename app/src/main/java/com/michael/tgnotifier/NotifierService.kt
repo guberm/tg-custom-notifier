@@ -36,7 +36,7 @@ class NotifierService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Telegram Notifier Running")
-            .setContentText("Listening to messages even when MUTED")
+            .setContentText("Listening to new messages from selected chats/groups/channels")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .build()
         startForeground(1, notification)

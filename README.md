@@ -1,24 +1,34 @@
 # Telegram Custom Notifier
 
-A custom Android application for receiving local notifications from specific Telegram chats, groups, and channels, even if they are set to **Muted** in the official app.
+A custom Android application for receiving local loud notifications from specific Telegram chats, groups, and channels, even if they are permanently set to **Muted** in your official Telegram client.
 
-## How it works
-The app works independently of the official Telegram client and does NOT change the mute settings on the telegram servers (official clients will still show the chat as muted). Instead, it uses **TDLib** to passively listen to incoming message updates locally in the background.
+## How it Works
+The app functions as an independent, headless Telegram client. It utilizes the official **TDLib (Telegram Database Library)** to authenticate and passively listen to incoming message updates in the background. It does **NOT** modify or unmute your chats on the Telegram servers (your official client will still show them as muted without unread badges if configured that way). 
 
-When a new message arrives from a chat/channel that you've added to the "Favorites" list in this app, it triggers a loud local notification using the standard Android notification manager.
+When a new message arrives from any chat, channel, or group that you have toggled `[ON]` in this app, a loud local notification is fired via the standard Android NotificationManager.
 
 ## Features
-1. **Foreground Service**: The daemon runs continuously with a pinned notification and holds a CPU Wakelock to bypass the aggressive Android Doze Mode battery optimizations.
-2. **Tab Layout Filtering**: Chats and groups are neatly separated by tabs: 'Chats', 'Groups', and 'Channels'.
-3. **Local Mute Bypass**: Does not unmute the chat on the server. Muted stays muted everywhere else.
+1. **True MTProto Integration**: Powered by TDLib directly. Native JNI connection to Telegram's secure protocol.
+2. **2FA Cloud Password Support**: Full implementation of Telegram's two-step verification authentication flow in the UI.
+3. **Deep Deep Search**: By default, TDLib only caches active recent messages. This app integrates a powerful search string connecting to `SearchChatsOnServer` and `SearchContacts` allowing you to actively query Telegram servers for any past contact, even if they aren't locally cached.
+4. **Smart Filtering UI**: 
+   - Tab layout separates `Chats`, `Groups`, and `Channels`.
+   - Real-time alphabetical sorting.
+   - Dynamic search by Chat Title or `@username`.
+   - `Enabled Only` toggle to keep track of your active notification targets.
+5. **Foreground Daemon**: Bypasses Android's Doze mode via a persistent foreground service and wake-locks, running seamlessly in the background 24/7.
 
-## Build Requirements (Important!)
-Because **TDLib** (the official C++ library by Telegram) requires native `.so` libraries compiled for the specific mobile architectures, you must provide your own compiled `tdlib.aar` (or native files) in the `app/libs` directory before building this project. 
-After adding the library, remember to uncomment the TDLib imports in `TgClient.kt`. The core API structure is already set up and ready to consume updates.
+## Build Information
+We use `jitpack.io` to fetch community-maintained TDLib Android wrappers (`com.github.tdlibx:td:1.8.56`). **No manual NDK compilation required!** 
+
+To compile the app in Android Studio / VSCode:
+1. Ensure your IDE is synced to Jetpack (via `settings.gradle.kts`).
+2. Build via `./gradlew clean :app:assembleDebug`.
+(If the Gradle Daemon locks the project output files on Windows, simply run `./gradlew --stop` before compiling again).
 
 ## Architecture Structure
-* `MainActivity`: The entry point for requesting Notification permissions (Android 13+) and disabling Battery optimizations.
-* `AuthActivity`: The UI for logging in via phone number and TDLib confirmation code.
-* `ChatListActivity`: The Tab+List interface to selectively add chats to the white-list.
-* `NotifierService`: The background service translating silent updates into Loud Local Notifications.
-* `TgClient`: A facade wrapper implementing TDLib architecture updates.
+* `MainActivity`: First-time setup, requesting POST_NOTIFICATIONS permission and disabling Battery Optimization.
+* `AuthActivity`: UI handling Telegram Login (Phone -> Code -> 2FA Password).
+* `ChatListActivity`: Real-time list UI fetching from local cache + remote queries.
+* `NotifierService`: The core sticky foreground service that routes payloads into ringtones.
+* `TgClient`: TDLib singleton facade managing connections, Chat lists, and `UpdateNewChat` dispatches.

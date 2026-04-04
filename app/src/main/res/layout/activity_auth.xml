@@ -9,4 +9,6 @@
     <Button android:id="@+id/btnSendPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Send Phone Number" />
     <EditText android:id="@+id/editCode" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Telegram Code" android:inputType="number" android:layout_marginTop="20dp" />
     <Button android:id="@+id/btnSendCode" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Submit Code" />
+    <EditText android:id="@+id/editPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="2FA Cloud Password" android:inputType="textPassword" android:layout_marginTop="20dp" android:visibility="gone" />
+    <Button android:id="@+id/btnSendPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Submit Password" android:visibility="gone" />
 </LinearLayout>
