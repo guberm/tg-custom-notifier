@@ -22,6 +22,7 @@ object TgClient {
     var authStateCallback: ((AuthState) -> Unit)? = null
     var onAuthStateChanged: ((AuthState) -> Unit)? = null  // secondary listener (MainActivity status)
     var newMessageCallback: ((Long, String, String, String) -> Unit)? = null
+    var onChatsUpdated: (() -> Unit)? = null  // fires on every UpdateNewChat or UpdateChatTitle
 
     var currentAuthState: AuthState = AuthState.WAITING_PARAMETERS
     
@@ -59,9 +60,10 @@ object TgClient {
             }
             TdApi.UpdateChatTitle.CONSTRUCTOR -> {
                 val titleUpdate = update as TdApi.UpdateChatTitle
-                cachedChats = cachedChats.map { 
-                    if (it.id == titleUpdate.chatId) it.copy(title = titleUpdate.title) else it 
+                cachedChats = cachedChats.map {
+                    if (it.id == titleUpdate.chatId) it.copy(title = titleUpdate.title) else it
                 }.toMutableList()
+                onChatsUpdated?.invoke()
             }
             TdApi.UpdateNewChat.CONSTRUCTOR -> {
                 val chatUpdate = update as TdApi.UpdateNewChat
@@ -78,7 +80,8 @@ object TgClient {
                 if (cachedChats.none { it.id == chat.id }) {
                     val info = ChatInfo(chat.id, chat.title, type)
                     cachedChats.add(info)
-                    
+                    onChatsUpdated?.invoke()
+
                     if (chat.type is TdApi.ChatTypePrivate) {
                         val userId = (chat.type as TdApi.ChatTypePrivate).userId
                         client?.send(TdApi.GetUser(userId)) { userResult ->
@@ -185,16 +188,15 @@ object TgClient {
         if (isFetchingChats) return
         isFetchingChats = true
         AppLogger.d(TAG, "Fetching remote chats from TDLib (Main & Archive)")
-        
-        // Command TDLib to load up to 1000 chats from Main list into local cache
-        client?.send(TdApi.LoadChats(TdApi.ChatListMain(), 1000)) { }
-        // Command TDLib to load up to 1000 chats from Archive list into local cache
-        client?.send(TdApi.LoadChats(TdApi.ChatListArchive(), 1000)) { }
-        
-        // Let TDLib trickle in the updates via UpdateNewChat, 
-        // we'll just toggle flag for completion after a short delay since it's asynchronous
+
+        // Load in two batches of 100 — TDLib will send UpdateNewChat for each,
+        // triggering onChatsUpdated in real time. Requesting 1000 at once causes
+        // hundreds of sequential network round-trips and takes minutes.
+        client?.send(TdApi.LoadChats(TdApi.ChatListMain(), 100)) { }
+        client?.send(TdApi.LoadChats(TdApi.ChatListArchive(), 100)) { }
+
         Thread {
-            Thread.sleep(2000)
+            Thread.sleep(500)
             isFetchingChats = false
         }.start()
     }

@@ -141,21 +141,7 @@ class ChatListActivity : AppCompatActivity() {
             Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT).show()
             AppLogger.d("ChatList", "Manual refresh triggered")
             TgClient.fetchRemoteChats()
-            val handler = android.os.Handler(android.os.Looper.getMainLooper())
-            val task = object : Runnable {
-                var checks = 0
-                override fun run() {
-                    TgClient.getChats(1000) { chats ->
-                        runOnUiThread {
-                            allChats = chats
-                            updateListForTab(tabLayout.selectedTabPosition)
-                        }
-                    }
-                    checks++
-                    if (checks < 5) handler.postDelayed(this, 1000)
-                }
-            }
-            handler.post(task)
+            // onChatsUpdated listener will update the list as UpdateNewChat arrives
         }
 
         // ── More options (⋮) popup menu ───────────────────────────────────────
@@ -196,23 +182,23 @@ class ChatListActivity : AppCompatActivity() {
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
 
-        val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        val updateTask = object : Runnable {
-            var checks = 0
-            override fun run() {
-                TgClient.getChats(1000) { chats ->
-                    runOnUiThread {
-                        allChats = chats
-                        updateListForTab(tabLayout.selectedTabPosition)
-                    }
-                }
-                checks++
-                if (checks < 10) {
-                    handler.postDelayed(this, 1000)
+        // Real-time listener: update list whenever TgClient receives a new chat
+        TgClient.onChatsUpdated = {
+            TgClient.getChats(1000) { chats ->
+                runOnUiThread {
+                    allChats = chats
+                    updateListForTab(tabLayout.selectedTabPosition)
                 }
             }
         }
-        handler.post(updateTask)
+
+        // Initial load
+        TgClient.getChats(1000) { chats ->
+            runOnUiThread {
+                allChats = chats
+                updateListForTab(tabLayout.selectedTabPosition)
+            }
+        }
 
         listView.setOnItemClickListener { _, _, position, _ ->
             val chat = currentChatsToDisplay[position]
@@ -225,6 +211,11 @@ class ChatListActivity : AppCompatActivity() {
             }
             updateListForTab(tabLayout.selectedTabPosition)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        TgClient.onChatsUpdated = null
     }
 
     private fun updateListForTab(tabIndex: Int) {
