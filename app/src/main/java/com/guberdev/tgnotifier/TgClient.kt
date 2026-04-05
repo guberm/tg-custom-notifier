@@ -187,18 +187,26 @@ object TgClient {
     fun fetchRemoteChats() {
         if (isFetchingChats) return
         isFetchingChats = true
-        AppLogger.d(TAG, "Fetching remote chats from TDLib (Main & Archive)")
+        AppLogger.d(TAG, "Fetching all chats from TDLib (Main & Archive)")
+        loadAllChats(TdApi.ChatListMain())
+        loadAllChats(TdApi.ChatListArchive())
+    }
 
-        // Load in two batches of 100 — TDLib will send UpdateNewChat for each,
-        // triggering onChatsUpdated in real time. Requesting 1000 at once causes
-        // hundreds of sequential network round-trips and takes minutes.
-        client?.send(TdApi.LoadChats(TdApi.ChatListMain(), 100)) { }
-        client?.send(TdApi.LoadChats(TdApi.ChatListArchive(), 100)) { }
-
-        Thread {
-            Thread.sleep(500)
-            isFetchingChats = false
-        }.start()
+    private fun loadAllChats(list: TdApi.ChatList) {
+        client?.send(TdApi.LoadChats(list, 100)) { result ->
+            when {
+                result is TdApi.Ok -> {
+                    // More chats available — keep going
+                    loadAllChats(list)
+                }
+                result is TdApi.Error -> {
+                    // Error 404 = list fully loaded; other errors = stop gracefully
+                    val listName = if (list is TdApi.ChatListMain) "Main" else "Archive"
+                    AppLogger.d(TAG, "All $listName chats loaded (${cachedChats.size} total)")
+                    isFetchingChats = false
+                }
+            }
+        }
     }
 
     fun logOut() {
