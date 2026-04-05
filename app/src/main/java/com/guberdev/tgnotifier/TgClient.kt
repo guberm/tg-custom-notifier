@@ -209,10 +209,58 @@ object TgClient {
         }
     }
 
-    fun clearChatCache() {
+    fun fullRefresh() {
         cachedChats.clear()
         isFetchingChats = false
-        AppLogger.d(TAG, "Chat cache cleared")
+        AppLogger.d(TAG, "Full refresh: cache cleared, reloading via GetChats")
+        // LoadChats won't work here — TDLib already fired UpdateNewChat for all chats
+        // and won't resend them. Use GetChats to get IDs from TDLib's sorted list,
+        // then GetChat for each to rebuild the cache.
+        listOf<TdApi.ChatList>(TdApi.ChatListMain(), TdApi.ChatListArchive()).forEach { list ->
+            client?.send(TdApi.GetChats(list, 100000)) { result ->
+                if (result is TdApi.Chats) {
+                    val listName = if (list is TdApi.ChatListMain) "Main" else "Archive"
+                    AppLogger.d(TAG, "GetChats($listName) returned ${result.chatIds.size} IDs")
+                    result.chatIds.forEach { chatId ->
+                        client?.send(TdApi.GetChat(chatId)) { chatResult ->
+                            if (chatResult is TdApi.Chat) {
+                                val chat = chatResult as TdApi.Chat
+                                val type = when (chat.type.constructor) {
+                                    TdApi.ChatTypePrivate.CONSTRUCTOR -> ChatType.USER
+                                    TdApi.ChatTypeBasicGroup.CONSTRUCTOR, TdApi.ChatTypeSupergroup.CONSTRUCTOR -> {
+                                        val isChannel = (chat.type as? TdApi.ChatTypeSupergroup)?.isChannel == true
+                                        if (isChannel) ChatType.CHANNEL else ChatType.GROUP
+                                    }
+                                    else -> ChatType.GROUP
+                                }
+                                if (cachedChats.none { it.id == chat.id }) {
+                                    val info = ChatInfo(chat.id, chat.title, type)
+                                    cachedChats.add(info)
+                                    if (chat.type is TdApi.ChatTypePrivate) {
+                                        val userId = (chat.type as TdApi.ChatTypePrivate).userId
+                                        client?.send(TdApi.GetUser(userId)) { userResult ->
+                                            if (userResult is TdApi.User) {
+                                                val uname = userResult.usernames?.activeUsernames?.firstOrNull()
+                                                if (uname != null) info.username = uname
+                                            }
+                                        }
+                                    } else if (chat.type is TdApi.ChatTypeSupergroup) {
+                                        val sgId = (chat.type as TdApi.ChatTypeSupergroup).supergroupId
+                                        client?.send(TdApi.GetSupergroup(sgId)) { sgResult ->
+                                            if (sgResult is TdApi.Supergroup) {
+                                                val uname = sgResult.usernames?.activeUsernames?.firstOrNull()
+                                                if (uname != null) info.username = uname
+                                            }
+                                        }
+                                    }
+                                }
+                                onChatsUpdated?.invoke()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun logOut() {

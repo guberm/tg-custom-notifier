@@ -143,8 +143,7 @@ class ChatListActivity : AppCompatActivity() {
                 .setMessage("Quick refresh (show cached) or full reload (clear cache and fetch all from scratch)?")
                 .setPositiveButton("Full reload") { _, _ ->
                     AppLogger.d("ChatList", "Full refresh triggered")
-                    TgClient.clearChatCache()
-                    TgClient.fetchRemoteChats()
+                    TgClient.fullRefresh()
                     Toast.makeText(this, "Full reload started...", Toast.LENGTH_SHORT).show()
                 }
                 .setNegativeButton("Quick") { _, _ ->
