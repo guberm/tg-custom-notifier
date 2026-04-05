@@ -209,6 +209,12 @@ object TgClient {
         }
     }
 
+    fun clearChatCache() {
+        cachedChats.clear()
+        isFetchingChats = false
+        AppLogger.d(TAG, "Chat cache cleared")
+    }
+
     fun logOut() {
         client?.send(TdApi.LogOut()) { }
         client = null

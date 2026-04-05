@@ -136,16 +136,28 @@ class ChatListActivity : AppCompatActivity() {
         checkShowEnabled = findViewById(R.id.checkShowEnabled)
         favChats = PreferencesHelper.getFavoriteChats(this).toMutableSet()
 
-        // ── Refresh button — reload display from local TDLib cache only ──────
+        // ── Refresh button — quick or full refresh ────────────────────────────
         findViewById<TextView>(R.id.btnRefreshChats).setOnClickListener {
-            AppLogger.d("ChatList", "Manual refresh triggered")
-            TgClient.getChats(1000) { chats ->
-                runOnUiThread {
-                    allChats = chats
-                    updateListForTab(tabLayout.selectedTabPosition)
-                    Toast.makeText(this, "Refreshed (${chats.size} chats)", Toast.LENGTH_SHORT).show()
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Refresh")
+                .setMessage("Quick refresh (show cached) or full reload (clear cache and fetch all from scratch)?")
+                .setPositiveButton("Full reload") { _, _ ->
+                    AppLogger.d("ChatList", "Full refresh triggered")
+                    TgClient.clearChatCache()
+                    TgClient.fetchRemoteChats()
+                    Toast.makeText(this, "Full reload started...", Toast.LENGTH_SHORT).show()
                 }
-            }
+                .setNegativeButton("Quick") { _, _ ->
+                    AppLogger.d("ChatList", "Quick refresh triggered")
+                    TgClient.getChats(1000) { chats ->
+                        runOnUiThread {
+                            allChats = chats
+                            updateListForTab(tabLayout.selectedTabPosition)
+                            Toast.makeText(this, "Refreshed (${chats.size} chats)", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                .show()
         }
 
         // ── More options (⋮) popup menu ───────────────────────────────────────
@@ -239,6 +251,7 @@ class ChatListActivity : AppCompatActivity() {
 
         currentChatsToDisplay = allChats.filter {
             it.type == targetType &&
+            it.title.isNotBlank() &&
             (searchQuery.isEmpty() || it.title.lowercase().contains(searchQuery) || it.username.lowercase().contains(searchQuery)) &&
             (!showEnabledOnly || favChats.contains(it.id))
         }.sortedBy { it.title.lowercase() }
