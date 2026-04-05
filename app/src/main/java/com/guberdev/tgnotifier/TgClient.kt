@@ -234,7 +234,7 @@ object TgClient {
         client?.send(TdApi.Close()) {}
     }
 
-    fun leaveChat(chatId: Long, type: ChatType, callback: (Boolean) -> Unit) {
+    fun leaveChat(chatId: Long, type: ChatType, blockBot: Boolean = false, callback: (Boolean) -> Unit) {
         val action: TdApi.Function<out TdApi.Object> = when (type) {
             ChatType.GROUP, ChatType.CHANNEL -> TdApi.LeaveChat(chatId)
             ChatType.USER, ChatType.BOT -> TdApi.DeleteChatHistory(chatId, true, false)
@@ -244,6 +244,11 @@ object TgClient {
             if (success) {
                 cachedChats.removeAll { it.id == chatId }
                 AppLogger.d(TAG, "Left/deleted chat $chatId ($type)")
+                if (blockBot && type == ChatType.BOT) {
+                    // For private chats in TDLib, chatId == userId
+                    client?.send(TdApi.SetMessageSenderBlockList(TdApi.MessageSenderUser(chatId), TdApi.BlockListMain())) { }
+                    AppLogger.d(TAG, "Blocked bot $chatId")
+                }
             } else {
                 AppLogger.e(TAG, "Failed to leave chat $chatId: ${(result as? TdApi.Error)?.message}")
             }

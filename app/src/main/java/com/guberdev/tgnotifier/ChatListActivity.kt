@@ -237,33 +237,51 @@ class ChatListActivity : AppCompatActivity() {
 
         listView.setOnItemLongClickListener { _, _, position, _ ->
             val chat = currentChatsToDisplay[position]
-            val actionLabel = when (chat.type) {
-                TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL -> "Leave"
-                else -> "Delete chat"
-            }
-            android.app.AlertDialog.Builder(this)
-                .setTitle("$actionLabel \"${chat.title}\"?")
-                .setMessage("This will ${actionLabel.lowercase()} on Telegram. Cannot be undone.")
-                .setPositiveButton(actionLabel) { _, _ ->
-                    if (favChats.contains(chat.id)) {
-                        favChats.remove(chat.id)
-                        PreferencesHelper.removeFavoriteChat(this, chat.id)
-                    }
-                    TgClient.leaveChat(chat.id, chat.type) { success ->
-                        runOnUiThread {
-                            if (success) {
-                                allChats = allChats.filter { it.id != chat.id }
-                                updateListForTab(tabLayout.selectedTabPosition)
-                                Toast.makeText(this, "${chat.title} removed", Toast.LENGTH_SHORT).show()
-                                AppLogger.d("ChatList", "$actionLabel: ${chat.title}")
-                            } else {
-                                Toast.makeText(this, "Failed: ${chat.title}", Toast.LENGTH_SHORT).show()
-                            }
+            fun doLeave(blockBot: Boolean) {
+                if (favChats.contains(chat.id)) {
+                    favChats.remove(chat.id)
+                    PreferencesHelper.removeFavoriteChat(this, chat.id)
+                }
+                TgClient.leaveChat(chat.id, chat.type, blockBot) { success ->
+                    runOnUiThread {
+                        if (success) {
+                            allChats = allChats.filter { it.id != chat.id }
+                            updateListForTab(tabLayout.selectedTabPosition)
+                            val label = if (blockBot) "Deleted & blocked" else "Removed"
+                            Toast.makeText(this, "$label: ${chat.title}", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "Failed: ${chat.title}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
+            when (chat.type) {
+                TgClient.ChatType.BOT -> {
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Remove bot \"${chat.title}\"?")
+                        .setMessage("Cannot be undone.")
+                        .setPositiveButton("Delete & Block") { _, _ -> doLeave(true) }
+                        .setNeutralButton("Delete") { _, _ -> doLeave(false) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+                TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL -> {
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Leave \"${chat.title}\"?")
+                        .setMessage("Cannot be undone.")
+                        .setPositiveButton("Leave") { _, _ -> doLeave(false) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+                else -> {
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle("Delete chat \"${chat.title}\"?")
+                        .setMessage("Cannot be undone.")
+                        .setPositiveButton("Delete") { _, _ -> doLeave(false) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }
             true
         }
     }
