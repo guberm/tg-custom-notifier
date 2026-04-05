@@ -14,10 +14,10 @@ object TgClient {
     }
 
     enum class ChatType {
-        USER, GROUP, CHANNEL
+        USER, GROUP, CHANNEL, BOT
     }
 
-    data class ChatInfo(val id: Long, var title: String, val type: ChatType, var username: String = "")
+    data class ChatInfo(val id: Long, var title: String, var type: ChatType, var username: String = "")
 
     var authStateCallback: ((AuthState) -> Unit)? = null
     var onAuthStateChanged: ((AuthState) -> Unit)? = null  // secondary listener (MainActivity status)
@@ -91,6 +91,10 @@ object TgClient {
                             if (userResult is TdApi.User) {
                                 val uname = userResult.usernames?.activeUsernames?.firstOrNull()
                                 if (uname != null) info.username = uname
+                                if (userResult.type is TdApi.UserTypeBot) {
+                                    info.type = ChatType.BOT
+                                    onChatsUpdated?.invoke()
+                                }
                             }
                         }
                     } else if (chat.type is TdApi.ChatTypeSupergroup) {

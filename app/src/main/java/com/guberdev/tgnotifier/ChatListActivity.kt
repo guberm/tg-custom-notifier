@@ -28,6 +28,7 @@ class ChatListActivity : AppCompatActivity() {
     private lateinit var checkShowEnabled: CheckBox
     private var allChats = listOf<TgClient.ChatInfo>()
     private lateinit var favChats: MutableSet<Long>
+    private lateinit var hiddenChats: MutableSet<Long>
     private var currentChatsToDisplay = listOf<TgClient.ChatInfo>()
     private var listAdapter: ChatAdapter? = null
 
@@ -135,6 +136,7 @@ class ChatListActivity : AppCompatActivity() {
         editSearch = findViewById(R.id.editSearch)
         checkShowEnabled = findViewById(R.id.checkShowEnabled)
         favChats = PreferencesHelper.getFavoriteChats(this).toMutableSet()
+        hiddenChats = PreferencesHelper.getHiddenChats(this).toMutableSet()
 
         // ── Refresh button — quick or full refresh ────────────────────────────
         findViewById<TextView>(R.id.btnRefreshChats).setOnClickListener {
@@ -232,6 +234,43 @@ class ChatListActivity : AppCompatActivity() {
             }
             updateListForTab(tabLayout.selectedTabPosition)
         }
+
+        listView.setOnItemLongClickListener { _, view, position, _ ->
+            val chat = currentChatsToDisplay[position]
+            val popup = PopupMenu(this, view)
+            val isHidden = hiddenChats.contains(chat.id)
+            popup.menu.add(0, 1, 0, if (isHidden) "Unhide" else "Hide from list")
+            if (favChats.contains(chat.id)) popup.menu.add(0, 2, 1, "Disable notifications")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    1 -> {
+                        if (isHidden) {
+                            hiddenChats.remove(chat.id)
+                            PreferencesHelper.removeHiddenChat(this, chat.id)
+                            Toast.makeText(this, "${chat.title} unhidden", Toast.LENGTH_SHORT).show()
+                        } else {
+                            hiddenChats.add(chat.id)
+                            PreferencesHelper.addHiddenChat(this, chat.id)
+                            // Also disable notifications if enabled
+                            if (favChats.contains(chat.id)) {
+                                favChats.remove(chat.id)
+                                PreferencesHelper.removeFavoriteChat(this, chat.id)
+                            }
+                            Toast.makeText(this, "${chat.title} hidden", Toast.LENGTH_SHORT).show()
+                        }
+                        updateListForTab(tabLayout.selectedTabPosition)
+                    }
+                    2 -> {
+                        favChats.remove(chat.id)
+                        PreferencesHelper.removeFavoriteChat(this, chat.id)
+                        updateListForTab(tabLayout.selectedTabPosition)
+                    }
+                }
+                true
+            }
+            popup.show()
+            true
+        }
     }
 
     override fun onDestroy() {
@@ -243,7 +282,8 @@ class ChatListActivity : AppCompatActivity() {
         val targetType = when (tabIndex) {
             0 -> TgClient.ChatType.USER
             1 -> TgClient.ChatType.GROUP
-            else -> TgClient.ChatType.CHANNEL
+            2 -> TgClient.ChatType.CHANNEL
+            else -> TgClient.ChatType.BOT
         }
         val searchQuery = editSearch.text.toString().lowercase()
         val showEnabledOnly = checkShowEnabled.isChecked
@@ -251,6 +291,7 @@ class ChatListActivity : AppCompatActivity() {
         currentChatsToDisplay = allChats.filter {
             it.type == targetType &&
             it.title.isNotBlank() &&
+            !hiddenChats.contains(it.id) &&
             (searchQuery.isEmpty() || it.title.lowercase().contains(searchQuery) || it.username.lowercase().contains(searchQuery)) &&
             (!showEnabledOnly || favChats.contains(it.id))
         }.sortedBy { it.title.lowercase() }
@@ -271,18 +312,19 @@ class ChatListActivity : AppCompatActivity() {
     }
 
     private fun updateTabCounts(searchQuery: String, showEnabledOnly: Boolean) {
-        val types = listOf(TgClient.ChatType.USER, TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL)
-        val labels = listOf("Chats", "Groups", "Channels")
+        val types = listOf(TgClient.ChatType.USER, TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL, TgClient.ChatType.BOT)
+        val labels = listOf("Chats", "Groups", "Channels", "Bots")
         val isFiltered = searchQuery.isNotEmpty() || showEnabledOnly
 
         for (i in types.indices) {
-            val total = allChats.count { it.type == types[i] }
+            val total = allChats.count { it.type == types[i] && !hiddenChats.contains(it.id) }
             val tab = tabLayout.getTabAt(i) ?: continue
             tab.text = if (!isFiltered) {
                 "${labels[i]} ($total)"
             } else {
                 val current = allChats.count { chat ->
                     chat.type == types[i] &&
+                    !hiddenChats.contains(chat.id) &&
                     (searchQuery.isEmpty() || chat.title.lowercase().contains(searchQuery) || chat.username.lowercase().contains(searchQuery)) &&
                     (!showEnabledOnly || favChats.contains(chat.id))
                 }
