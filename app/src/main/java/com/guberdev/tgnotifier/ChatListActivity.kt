@@ -1,8 +1,15 @@
 package com.guberdev.tgnotifier
 
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.net.Uri
 import android.os.Bundle
+import android.widget.ImageView
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
@@ -87,6 +94,23 @@ class ChatListActivity : AppCompatActivity() {
         }
     }
 
+    private val photoCache = HashMap<Long, Bitmap?>()
+
+    private fun toCircleBitmap(path: String): Bitmap? {
+        val src = BitmapFactory.decodeFile(path) ?: return null
+        val size = minOf(src.width, src.height)
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        val x = (src.width - size) / 2
+        val y = (src.height - size) / 2
+        canvas.drawBitmap(src, (-x).toFloat(), (-y).toFloat(), paint)
+        src.recycle()
+        return output
+    }
+
     inner class ChatAdapter(items: List<TgClient.ChatInfo>) :
         ArrayAdapter<TgClient.ChatInfo>(this@ChatListActivity, R.layout.item_chat, items.toMutableList()) {
 
@@ -95,6 +119,7 @@ class ChatListActivity : AppCompatActivity() {
             val chat = getItem(position) ?: return view
 
             val avatarText = view.findViewById<TextView>(R.id.avatarText)
+            val avatarImage = view.findViewById<ImageView>(R.id.avatarImage)
             val chatName = view.findViewById<TextView>(R.id.chatName)
             val chatUsername = view.findViewById<TextView>(R.id.chatUsername)
             val chatBadge = view.findViewById<TextView>(R.id.chatBadge)
@@ -103,6 +128,34 @@ class ChatListActivity : AppCompatActivity() {
             val colorIdx = initial.code % AVATAR_COLORS.size
             avatarText.text = initial.toString()
             avatarText.backgroundTintList = ColorStateList.valueOf(AVATAR_COLORS[colorIdx])
+
+            // Show photo if available, otherwise fall back to letter
+            val path = chat.photoPath
+            if (path != null) {
+                view.tag = chat.id
+                val cached = photoCache[chat.id]
+                if (cached != null) {
+                    avatarImage.setImageBitmap(cached)
+                    avatarImage.visibility = View.VISIBLE
+                } else if (!photoCache.containsKey(chat.id)) {
+                    photoCache[chat.id] = null // mark as loading
+                    android.os.AsyncTask.execute {
+                        val bmp = toCircleBitmap(path)
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            photoCache[chat.id] = bmp
+                            if (view.tag == chat.id) {
+                                if (bmp != null) {
+                                    avatarImage.setImageBitmap(bmp)
+                                    avatarImage.visibility = View.VISIBLE
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                avatarImage.visibility = View.GONE
+                avatarImage.setImageBitmap(null)
+            }
 
             chatName.text = chat.title
             if (chat.username.isNotEmpty()) {
@@ -313,6 +366,7 @@ class ChatListActivity : AppCompatActivity() {
         val offset = listView.getChildAt(0)?.top ?: 0
 
         if (listAdapter == null) {
+            photoCache.clear()
             listAdapter = ChatAdapter(currentChatsToDisplay)
             listView.adapter = listAdapter
         } else {

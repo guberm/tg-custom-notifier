@@ -17,7 +17,7 @@ object TgClient {
         USER, GROUP, CHANNEL, BOT
     }
 
-    data class ChatInfo(val id: Long, var title: String, var type: ChatType, var username: String = "")
+    data class ChatInfo(val id: Long, var title: String, var type: ChatType, var username: String = "", var photoFileId: Int = 0, var photoPath: String? = null)
 
     var authStateCallback: ((AuthState) -> Unit)? = null
     var onAuthStateChanged: ((AuthState) -> Unit)? = null  // secondary listener (MainActivity status)
@@ -61,6 +61,15 @@ object TgClient {
                     newMessageCallback?.invoke(chatId, title, username, text)
                 }
             }
+            TdApi.UpdateFile.CONSTRUCTOR -> {
+                val file = (update as TdApi.UpdateFile).file
+                if (file.local.isDownloadingCompleted) {
+                    cachedChats.find { it.photoFileId == file.id }?.let { info ->
+                        info.photoPath = file.local.path
+                        onChatsUpdated?.invoke()
+                    }
+                }
+            }
             TdApi.UpdateChatTitle.CONSTRUCTOR -> {
                 val titleUpdate = update as TdApi.UpdateChatTitle
                 cachedChats = cachedChats.map {
@@ -83,6 +92,17 @@ object TgClient {
                 if (cachedChats.none { it.id == chat.id }) {
                     val info = ChatInfo(chat.id, chat.title, type)
                     cachedChats.add(info)
+
+                    // Download small photo if available
+                    chat.photo?.small?.let { file ->
+                        info.photoFileId = file.id
+                        if (file.local.isDownloadingCompleted) {
+                            info.photoPath = file.local.path
+                        } else {
+                            client?.send(TdApi.DownloadFile(file.id, 1, 0, 0, false)) {}
+                        }
+                    }
+
                     onChatsUpdated?.invoke()
 
                     if (chat.type is TdApi.ChatTypePrivate) {
