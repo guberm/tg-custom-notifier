@@ -234,6 +234,23 @@ object TgClient {
         client?.send(TdApi.Close()) {}
     }
 
+    fun leaveChat(chatId: Long, type: ChatType, callback: (Boolean) -> Unit) {
+        val action: TdApi.Function<out TdApi.Object> = when (type) {
+            ChatType.GROUP, ChatType.CHANNEL -> TdApi.LeaveChat(chatId)
+            ChatType.USER, ChatType.BOT -> TdApi.DeleteChatHistory(chatId, true, false)
+        }
+        client?.send(action) { result ->
+            val success = result is TdApi.Ok
+            if (success) {
+                cachedChats.removeAll { it.id == chatId }
+                AppLogger.d(TAG, "Left/deleted chat $chatId ($type)")
+            } else {
+                AppLogger.e(TAG, "Failed to leave chat $chatId: ${(result as? TdApi.Error)?.message}")
+            }
+            callback(success)
+        }
+    }
+
     fun logOut() {
         client?.send(TdApi.LogOut()) { }
         client = null

@@ -235,40 +235,35 @@ class ChatListActivity : AppCompatActivity() {
             updateListForTab(tabLayout.selectedTabPosition)
         }
 
-        listView.setOnItemLongClickListener { _, view, position, _ ->
+        listView.setOnItemLongClickListener { _, _, position, _ ->
             val chat = currentChatsToDisplay[position]
-            val popup = PopupMenu(this, view)
-            val isHidden = hiddenChats.contains(chat.id)
-            popup.menu.add(0, 1, 0, if (isHidden) "Unhide" else "Hide from list")
-            if (favChats.contains(chat.id)) popup.menu.add(0, 2, 1, "Disable notifications")
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
-                        if (isHidden) {
-                            hiddenChats.remove(chat.id)
-                            PreferencesHelper.removeHiddenChat(this, chat.id)
-                            Toast.makeText(this, "${chat.title} unhidden", Toast.LENGTH_SHORT).show()
-                        } else {
-                            hiddenChats.add(chat.id)
-                            PreferencesHelper.addHiddenChat(this, chat.id)
-                            // Also disable notifications if enabled
-                            if (favChats.contains(chat.id)) {
-                                favChats.remove(chat.id)
-                                PreferencesHelper.removeFavoriteChat(this, chat.id)
-                            }
-                            Toast.makeText(this, "${chat.title} hidden", Toast.LENGTH_SHORT).show()
-                        }
-                        updateListForTab(tabLayout.selectedTabPosition)
-                    }
-                    2 -> {
+            val actionLabel = when (chat.type) {
+                TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL -> "Leave"
+                else -> "Delete chat"
+            }
+            android.app.AlertDialog.Builder(this)
+                .setTitle("$actionLabel \"${chat.title}\"?")
+                .setMessage("This will ${actionLabel.lowercase()} on Telegram. Cannot be undone.")
+                .setPositiveButton(actionLabel) { _, _ ->
+                    if (favChats.contains(chat.id)) {
                         favChats.remove(chat.id)
                         PreferencesHelper.removeFavoriteChat(this, chat.id)
-                        updateListForTab(tabLayout.selectedTabPosition)
+                    }
+                    TgClient.leaveChat(chat.id, chat.type) { success ->
+                        runOnUiThread {
+                            if (success) {
+                                allChats = allChats.filter { it.id != chat.id }
+                                updateListForTab(tabLayout.selectedTabPosition)
+                                Toast.makeText(this, "${chat.title} removed", Toast.LENGTH_SHORT).show()
+                                AppLogger.d("ChatList", "$actionLabel: ${chat.title}")
+                            } else {
+                                Toast.makeText(this, "Failed: ${chat.title}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
-                true
-            }
-            popup.show()
+                .setNegativeButton("Cancel", null)
+                .show()
             true
         }
     }
