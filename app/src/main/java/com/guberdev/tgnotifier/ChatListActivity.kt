@@ -1,6 +1,7 @@
 package com.guberdev.tgnotifier
 
 import android.content.res.ColorStateList
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -11,9 +12,14 @@ import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ListView
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.tabs.TabLayout
+import org.json.JSONArray
+import org.json.JSONObject
 
 class ChatListActivity : AppCompatActivity() {
     private lateinit var listView: ListView
@@ -30,6 +36,55 @@ class ChatListActivity : AppCompatActivity() {
         0xFF4CAF50.toInt(), 0xFFFF9800.toInt(), 0xFF00BCD4.toInt(),
         0xFFFF5722.toInt(), 0xFF607D8B.toInt()
     )
+
+    // ── Export: write JSON to a user-chosen file ──────────────────────────────
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        if (uri == null) return@registerForActivityResult
+        try {
+            val arr = JSONArray()
+            favChats.forEach { id ->
+                val chat = allChats.find { it.id == id }
+                val obj = JSONObject()
+                obj.put("id", id)
+                obj.put("title", chat?.title ?: "")
+                arr.put(obj)
+            }
+            contentResolver.openOutputStream(uri)?.use { it.write(arr.toString(2).toByteArray()) }
+            Toast.makeText(this, "Exported ${favChats.size} chats", Toast.LENGTH_SHORT).show()
+            AppLogger.d("ChatList", "Exported ${favChats.size} enabled chats")
+        } catch (e: Exception) {
+            Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            AppLogger.e("ChatList", "Export failed: ${e.message}")
+        }
+    }
+
+    // ── Import: read JSON from a user-chosen file ─────────────────────────────
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) return@registerForActivityResult
+        try {
+            val json = contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+                ?: return@registerForActivityResult
+            val arr = JSONArray(json)
+            val ids = mutableSetOf<Long>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                ids.add(obj.getLong("id"))
+            }
+            PreferencesHelper.setFavoriteChats(this, ids)
+            favChats.clear()
+            favChats.addAll(ids)
+            updateListForTab(tabLayout.selectedTabPosition)
+            Toast.makeText(this, "Imported ${ids.size} chats", Toast.LENGTH_SHORT).show()
+            AppLogger.d("ChatList", "Imported ${ids.size} enabled chats")
+        } catch (e: Exception) {
+            Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            AppLogger.e("ChatList", "Import failed: ${e.message}")
+        }
+    }
 
     inner class ChatAdapter(items: List<TgClient.ChatInfo>) :
         ArrayAdapter<TgClient.ChatInfo>(this@ChatListActivity, R.layout.item_chat, items.toMutableList()) {
@@ -80,6 +135,43 @@ class ChatListActivity : AppCompatActivity() {
         editSearch = findViewById(R.id.editSearch)
         checkShowEnabled = findViewById(R.id.checkShowEnabled)
         favChats = PreferencesHelper.getFavoriteChats(this).toMutableSet()
+
+        // ── Refresh button ────────────────────────────────────────────────────
+        findViewById<TextView>(R.id.btnRefreshChats).setOnClickListener {
+            Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT).show()
+            AppLogger.d("ChatList", "Manual refresh triggered")
+            TgClient.fetchRemoteChats()
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            val task = object : Runnable {
+                var checks = 0
+                override fun run() {
+                    TgClient.getChats(1000) { chats ->
+                        runOnUiThread {
+                            allChats = chats
+                            updateListForTab(tabLayout.selectedTabPosition)
+                        }
+                    }
+                    checks++
+                    if (checks < 5) handler.postDelayed(this, 1000)
+                }
+            }
+            handler.post(task)
+        }
+
+        // ── More options (⋮) popup menu ───────────────────────────────────────
+        findViewById<TextView>(R.id.btnMoreOptions).setOnClickListener { anchor ->
+            val popup = PopupMenu(this, anchor)
+            popup.menu.add(0, 1, 0, "Export enabled chats")
+            popup.menu.add(0, 2, 1, "Import enabled chats")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    1 -> exportLauncher.launch("tg_enabled_chats.json")
+                    2 -> importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                }
+                true
+            }
+            popup.show()
+        }
 
         editSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}

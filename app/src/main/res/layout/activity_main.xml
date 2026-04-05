@@ -247,6 +247,16 @@
                 android:textSize="28sp" />
         </LinearLayout>
 
+        <!-- View Logs -->
+        <Button
+            android:id="@+id/btnViewLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View Logs"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:textColor="@color/accent_blue"
+            android:layout_marginBottom="10dp" />
+
         <!-- Battery optimization -->
         <Button
             android:id="@+id/btnDisableBatteryOpt"

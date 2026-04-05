@@ -27,4 +27,8 @@ object PreferencesHelper {
         current.remove(chatId)
         getPrefs(context).edit().putStringSet(KEY_FAVORITE_CHATS, current.map { it.toString() }.toSet()).apply()
     }
+
+    fun setFavoriteChats(context: Context, chatIds: Set<Long>) {
+        getPrefs(context).edit().putStringSet(KEY_FAVORITE_CHATS, chatIds.map { it.toString() }.toSet()).apply()
+    }
 }

@@ -24,6 +24,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         checkPermissions()
 
+        AppLogger.init(filesDir)
+        AppLogger.d("MainActivity", "App started")
         TgClient.initialize(filesDir.absolutePath)
 
         findViewById<View>(R.id.btnAuth).setOnClickListener {
@@ -56,6 +58,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
+        }
+
+        findViewById<Button>(R.id.btnViewLogs).setOnClickListener {
+            startActivity(Intent(this, LogActivity::class.java))
         }
 
         findViewById<Button>(R.id.btnDisableBatteryOpt).setOnClickListener {

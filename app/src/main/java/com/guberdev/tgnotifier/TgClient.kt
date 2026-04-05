@@ -1,6 +1,5 @@
 package com.guberdev.tgnotifier
 
-import android.util.Log
 import org.drinkless.tdlib.Client
 import org.drinkless.tdlib.TdApi
 
@@ -30,9 +29,11 @@ object TgClient {
     private var cachedChats: MutableList<ChatInfo> = mutableListOf()
     private var isFetchingChats = false
 
+    private const val TAG = "TgClient"
+
     fun initialize(dir: String) {
         if (client != null) return
-        Log.d("TgClient", "Initializing TDLib in $dir")
+        AppLogger.d(TAG, "Initializing TDLib in $dir")
         
         client = Client.create({ obj -> 
             handleUpdate(obj, dir)
@@ -142,8 +143,7 @@ object TgClient {
                 currentAuthState = AuthState.READY
                 authStateCallback?.invoke(currentAuthState)
                 onAuthStateChanged?.invoke(currentAuthState)
-                Log.d("TgClient", "TDLib is authorized and ready!")
-                // Pre-fetch chats
+                AppLogger.d(TAG, "TDLib is authorized and ready!")
                 fetchRemoteChats()
             }
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
@@ -155,36 +155,36 @@ object TgClient {
     }
 
     fun sendPhoneNumber(phone: String) {
-        Log.d("TgClient", "Sending phone number: $phone")
+        AppLogger.d(TAG, "Sending phone number: $phone")
         client?.send(TdApi.SetAuthenticationPhoneNumber(phone, null)) { result ->
             if (result.constructor == TdApi.Error.CONSTRUCTOR) {
-                Log.e("TgClient", "Error sending phone: ${(result as TdApi.Error).message}")
+                AppLogger.e(TAG, "Error sending phone: ${(result as TdApi.Error).message}")
             }
         }
     }
 
     fun sendCode(code: String) {
-        Log.d("TgClient", "Sending code: $code")
+        AppLogger.d(TAG, "Sending code")
         client?.send(TdApi.CheckAuthenticationCode(code)) { result ->
             if (result.constructor == TdApi.Error.CONSTRUCTOR) {
-                Log.e("TgClient", "Error verifying code: ${(result as TdApi.Error).message}")
+                AppLogger.e(TAG, "Error verifying code: ${(result as TdApi.Error).message}")
             }
         }
     }
 
     fun sendPassword(password: String) {
-        Log.d("TgClient", "Sending password...")
+        AppLogger.d(TAG, "Sending password")
         client?.send(TdApi.CheckAuthenticationPassword(password)) { result ->
             if (result.constructor == TdApi.Error.CONSTRUCTOR) {
-                Log.e("TgClient", "Error verifying password: ${(result as TdApi.Error).message}")
+                AppLogger.e(TAG, "Error verifying password: ${(result as TdApi.Error).message}")
             }
         }
     }
 
-    private fun fetchRemoteChats() {
+    fun fetchRemoteChats() {
         if (isFetchingChats) return
         isFetchingChats = true
-        Log.d("TgClient", "Fetching remote chats from TDLib (Main & Archive)")
+        AppLogger.d(TAG, "Fetching remote chats from TDLib (Main & Archive)")
         
         // Command TDLib to load up to 1000 chats from Main list into local cache
         client?.send(TdApi.LoadChats(TdApi.ChatListMain(), 1000)) { }
@@ -221,7 +221,7 @@ object TgClient {
     }
 
     fun getChats(limit: Int, callback: (List<ChatInfo>) -> Unit) {
-        Log.d("TgClient", "Returning chats limit $limit")
+        AppLogger.d(TAG, "Returning chats limit $limit")
         if (cachedChats.isEmpty()) {
             fetchRemoteChats() // Force fetch if empty
         }
