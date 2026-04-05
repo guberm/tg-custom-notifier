@@ -193,60 +193,6 @@
                 android:textSize="28sp" />
         </LinearLayout>
 
-        <!-- Step 3: Start Service -->
-        <LinearLayout
-            android:id="@+id/btnStartService"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_card_ripple"
-            android:padding="16dp"
-            android:layout_marginBottom="20dp"
-            android:clickable="true"
-            android:focusable="true">
-
-            <TextView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="@drawable/circle_avatar"
-                android:gravity="center"
-                android:text="3"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginStart="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Start Service"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Run notification listener in background"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/accent_blue"
-                android:textSize="28sp" />
-        </LinearLayout>
-
         <!-- View Logs -->
         <Button
             android:id="@+id/btnViewLogs"

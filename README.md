@@ -42,5 +42,6 @@ To compile the app in Android Studio / VSCode:
 * `PreferencesHelper`: SharedPreferences helper for persisting enabled chat IDs.
 
 ## Version History
+- **1.2** — Service auto-starts on every app launch (no manual button); all chats fully loaded on startup; real-time chat list updates
 - **1.1** — Refresh button, import/export enabled chats, log viewer, autostart on boot
 - **1.0** — Initial release
