@@ -12,6 +12,13 @@ class LogActivity : AppCompatActivity() {
 
     private lateinit var tvLog: TextView
     private lateinit var scrollView: ScrollView
+    private val autoRefreshHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val autoRefreshRunnable = object : Runnable {
+        override fun run() {
+            loadLogs()
+            autoRefreshHandler.postDelayed(this, 2000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +28,7 @@ class LogActivity : AppCompatActivity() {
         scrollView = findViewById(R.id.scrollLog)
 
         loadLogs()
+        autoRefreshHandler.postDelayed(autoRefreshRunnable, 2000)
 
         findViewById<Button>(R.id.btnRefreshLog).setOnClickListener { loadLogs() }
 
@@ -40,6 +48,11 @@ class LogActivity : AppCompatActivity() {
             }
             startActivity(Intent.createChooser(intent, "Share logs"))
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        autoRefreshHandler.removeCallbacks(autoRefreshRunnable)
     }
 
     private fun loadLogs() {

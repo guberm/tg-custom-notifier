@@ -182,14 +182,20 @@ class ChatListActivity : AppCompatActivity() {
             override fun onTabReselected(tab: TabLayout.Tab?) {}
         })
 
-        // Real-time listener: update list whenever TgClient receives a new chat
-        TgClient.onChatsUpdated = {
+        // Real-time listener with debounce — UpdateNewChat fires for every single chat,
+        // so we batch updates: only refresh UI at most once per 200ms
+        val debounceHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        val debounceRunnable = Runnable {
             TgClient.getChats(1000) { chats ->
                 runOnUiThread {
                     allChats = chats
                     updateListForTab(tabLayout.selectedTabPosition)
                 }
             }
+        }
+        TgClient.onChatsUpdated = {
+            debounceHandler.removeCallbacks(debounceRunnable)
+            debounceHandler.postDelayed(debounceRunnable, 200)
         }
 
         // Initial load
