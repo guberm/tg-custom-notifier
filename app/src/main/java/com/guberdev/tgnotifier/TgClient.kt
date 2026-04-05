@@ -25,18 +25,21 @@ object TgClient {
     var onChatsUpdated: (() -> Unit)? = null  // fires on every UpdateNewChat or UpdateChatTitle
 
     var currentAuthState: AuthState = AuthState.WAITING_PARAMETERS
-    
+
     private var client: Client? = null
     private var cachedChats: MutableList<ChatInfo> = mutableListOf()
     private var isFetchingChats = false
+    private var dbDir: String = ""
+    private var isRestarting = false
 
     private const val TAG = "TgClient"
 
     fun initialize(dir: String) {
         if (client != null) return
+        dbDir = dir
         AppLogger.d(TAG, "Initializing TDLib in $dir")
-        
-        client = Client.create({ obj -> 
+
+        client = Client.create({ obj ->
             handleUpdate(obj, dir)
         }, null, null)
     }
@@ -150,9 +153,17 @@ object TgClient {
                 fetchRemoteChats()
             }
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
-                currentAuthState = AuthState.LOGGED_OUT
-                authStateCallback?.invoke(currentAuthState)
-                onAuthStateChanged?.invoke(currentAuthState)
+                client = null
+                if (isRestarting) {
+                    // Full refresh: restart client with same DB — TDLib re-fires UpdateNewChat for all DB chats
+                    isRestarting = false
+                    AppLogger.d(TAG, "Full refresh: restarting TDLib client")
+                    client = Client.create({ obj -> handleUpdate(obj, dir) }, null, null)
+                } else {
+                    currentAuthState = AuthState.LOGGED_OUT
+                    authStateCallback?.invoke(currentAuthState)
+                    onAuthStateChanged?.invoke(currentAuthState)
+                }
             }
         }
     }
@@ -210,57 +221,13 @@ object TgClient {
     }
 
     fun fullRefresh() {
+        AppLogger.d(TAG, "Full refresh: closing TDLib client to force reload from DB")
         cachedChats.clear()
         isFetchingChats = false
-        AppLogger.d(TAG, "Full refresh: cache cleared, reloading via GetChats")
-        // LoadChats won't work here — TDLib already fired UpdateNewChat for all chats
-        // and won't resend them. Use GetChats to get IDs from TDLib's sorted list,
-        // then GetChat for each to rebuild the cache.
-        listOf<TdApi.ChatList>(TdApi.ChatListMain(), TdApi.ChatListArchive()).forEach { list ->
-            client?.send(TdApi.GetChats(list, 100000)) { result ->
-                if (result is TdApi.Chats) {
-                    val listName = if (list is TdApi.ChatListMain) "Main" else "Archive"
-                    AppLogger.d(TAG, "GetChats($listName) returned ${result.chatIds.size} IDs")
-                    result.chatIds.forEach { chatId ->
-                        client?.send(TdApi.GetChat(chatId)) { chatResult ->
-                            if (chatResult is TdApi.Chat) {
-                                val chat = chatResult as TdApi.Chat
-                                val type = when (chat.type.constructor) {
-                                    TdApi.ChatTypePrivate.CONSTRUCTOR -> ChatType.USER
-                                    TdApi.ChatTypeBasicGroup.CONSTRUCTOR, TdApi.ChatTypeSupergroup.CONSTRUCTOR -> {
-                                        val isChannel = (chat.type as? TdApi.ChatTypeSupergroup)?.isChannel == true
-                                        if (isChannel) ChatType.CHANNEL else ChatType.GROUP
-                                    }
-                                    else -> ChatType.GROUP
-                                }
-                                if (cachedChats.none { it.id == chat.id }) {
-                                    val info = ChatInfo(chat.id, chat.title, type)
-                                    cachedChats.add(info)
-                                    if (chat.type is TdApi.ChatTypePrivate) {
-                                        val userId = (chat.type as TdApi.ChatTypePrivate).userId
-                                        client?.send(TdApi.GetUser(userId)) { userResult ->
-                                            if (userResult is TdApi.User) {
-                                                val uname = userResult.usernames?.activeUsernames?.firstOrNull()
-                                                if (uname != null) info.username = uname
-                                            }
-                                        }
-                                    } else if (chat.type is TdApi.ChatTypeSupergroup) {
-                                        val sgId = (chat.type as TdApi.ChatTypeSupergroup).supergroupId
-                                        client?.send(TdApi.GetSupergroup(sgId)) { sgResult ->
-                                            if (sgResult is TdApi.Supergroup) {
-                                                val uname = sgResult.usernames?.activeUsernames?.firstOrNull()
-                                                if (uname != null) info.username = uname
-                                            }
-                                        }
-                                    }
-                                }
-                                onChatsUpdated?.invoke()
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        isRestarting = true
+        // Closing the client triggers AuthorizationStateClosed, which (because isRestarting=true)
+        // recreates the client. TDLib re-reads its local DB and fires UpdateNewChat for all known chats.
+        client?.send(TdApi.Close()) {}
     }
 
     fun logOut() {
