@@ -136,12 +136,16 @@ class ChatListActivity : AppCompatActivity() {
         checkShowEnabled = findViewById(R.id.checkShowEnabled)
         favChats = PreferencesHelper.getFavoriteChats(this).toMutableSet()
 
-        // ── Refresh button ────────────────────────────────────────────────────
+        // ── Refresh button — reload display from local TDLib cache only ──────
         findViewById<TextView>(R.id.btnRefreshChats).setOnClickListener {
-            Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT).show()
             AppLogger.d("ChatList", "Manual refresh triggered")
-            TgClient.fetchRemoteChats()
-            // onChatsUpdated listener will update the list as UpdateNewChat arrives
+            TgClient.getChats(1000) { chats ->
+                runOnUiThread {
+                    allChats = chats
+                    updateListForTab(tabLayout.selectedTabPosition)
+                    Toast.makeText(this, "Refreshed (${chats.size} chats)", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         // ── More options (⋮) popup menu ───────────────────────────────────────
