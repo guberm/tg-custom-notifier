@@ -2,7 +2,11 @@ package com.guberdev.tgnotifier
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +16,10 @@ class LogActivity : AppCompatActivity() {
 
     private lateinit var tvLog: TextView
     private lateinit var scrollView: ScrollView
+    private lateinit var etFilter: EditText
+    private lateinit var btnClearFilter: Button
+    private var fullLogText: String = ""
+
     private val autoRefreshHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val autoRefreshRunnable = object : Runnable {
         override fun run() {
@@ -26,6 +34,21 @@ class LogActivity : AppCompatActivity() {
 
         tvLog = findViewById(R.id.tvLog)
         scrollView = findViewById(R.id.scrollLog)
+        etFilter = findViewById(R.id.etFilter)
+        btnClearFilter = findViewById(R.id.btnClearFilter)
+
+        etFilter.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                btnClearFilter.visibility = if (s.isNullOrEmpty()) View.GONE else View.VISIBLE
+                applyFilter()
+            }
+        })
+
+        btnClearFilter.setOnClickListener {
+            etFilter.setText("")
+        }
 
         loadLogs()
         autoRefreshHandler.postDelayed(autoRefreshRunnable, 2000)
@@ -56,8 +79,20 @@ class LogActivity : AppCompatActivity() {
     }
 
     private fun loadLogs() {
-        val text = AppLogger.readAll()
-        tvLog.text = text
+        fullLogText = AppLogger.readAll()
+        applyFilter()
+    }
+
+    private fun applyFilter() {
+        val query = etFilter.text.toString().trim()
+        val displayed = if (query.isEmpty()) {
+            fullLogText
+        } else {
+            fullLogText.lines()
+                .filter { it.contains(query, ignoreCase = true) }
+                .joinToString("\n")
+        }
+        tvLog.text = displayed
         scrollView.post { scrollView.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 }
