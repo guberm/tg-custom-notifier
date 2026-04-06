@@ -32,7 +32,10 @@ class NotifierService : Service() {
         TgClient.newMessageCallback = { chatId, title, username, text ->
             val favs = PreferencesHelper.getFavoriteChats(this)
             if (favs.contains(chatId)) {
+                AppLogger.d("NotifierService", "NOTIF sent: $title (id=$chatId)")
                 sendLocalNotification(title, text, username, chatId)
+            } else {
+                AppLogger.d("NotifierService", "SKIP: $title (id=$chatId) not in favorites")
             }
         }
     }
@@ -70,7 +73,11 @@ class NotifierService : Service() {
             .setAutoCancel(true)
             .build()
         val manager = getSystemService(NotificationManager::class.java)
-        manager?.notify((System.currentTimeMillis() % 10000).toInt(), notif)
+        if (manager != null) {
+            manager.notify((System.currentTimeMillis() % 10000).toInt(), notif)
+        } else {
+            AppLogger.e("NotifierService", "NotificationManager unavailable, could not notify for $title")
+        }
     }
 
     override fun onDestroy() {

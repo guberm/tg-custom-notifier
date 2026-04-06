@@ -58,6 +58,8 @@ object TgClient {
                     val chatInfo = cachedChats.find { it.id == chatId }
                     val title = chatInfo?.title ?: "Chat $chatId"
                     val username = chatInfo?.username ?: ""
+                    val preview = if (text.length > 80) text.take(80) + "…" else text
+                    AppLogger.d(TAG, "MSG [$title] (id=$chatId): $preview")
                     newMessageCallback?.invoke(chatId, title, username, text)
                 }
             }
