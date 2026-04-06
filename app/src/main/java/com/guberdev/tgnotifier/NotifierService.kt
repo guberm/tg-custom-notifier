@@ -29,11 +29,23 @@ class NotifierService : Service() {
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "TgNotifier::BackgroundWakelock")
         wakeLock?.acquire(10*60*1000L /*10 minutes*/) 
 
-        TgClient.newMessageCallback = { chatId, title, username, text ->
+        TgClient.newMessageCallback = { chatId, title, username, text, isOutgoing ->
             val favs = PreferencesHelper.getFavoriteChats(this)
             if (favs.contains(chatId)) {
-                AppLogger.d("NotifierService", "NOTIF sent: $title (id=$chatId)")
-                sendLocalNotification(title, text, username, chatId)
+                val dir = PreferencesHelper.effectiveDirection(this, chatId)
+                val shouldNotify = when (dir) {
+                    PreferencesHelper.Direction.BOTH     -> true
+                    PreferencesHelper.Direction.INCOMING -> !isOutgoing
+                    PreferencesHelper.Direction.OUTGOING -> isOutgoing
+                    PreferencesHelper.Direction.NONE     -> false
+                }
+                val dirLabel = if (isOutgoing) "out" else "in"
+                if (shouldNotify) {
+                    AppLogger.d("NotifierService", "NOTIF sent: $title ($dirLabel, dir=$dir)")
+                    sendLocalNotification(title, text, username, chatId)
+                } else {
+                    AppLogger.d("NotifierService", "SKIP dir: $title ($dirLabel, dir=$dir)")
+                }
             } else {
                 AppLogger.d("NotifierService", "SKIP: $title (id=$chatId) not in favorites")
             }

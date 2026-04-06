@@ -167,8 +167,15 @@ class ChatListActivity : AppCompatActivity() {
 
             val isOn = favChats.contains(chat.id)
             if (isOn) {
-                chatBadge.text = "ON"
-                chatBadge.setTextColor(0xFF27AE60.toInt())
+                val dir = PreferencesHelper.effectiveDirection(context, chat.id)
+                val (label, color) = when (dir) {
+                    PreferencesHelper.Direction.INCOMING -> "IN"  to 0xFF27AE60.toInt()
+                    PreferencesHelper.Direction.OUTGOING -> "OUT" to 0xFF2980B9.toInt()
+                    PreferencesHelper.Direction.BOTH     -> "↔"   to 0xFF8E44AD.toInt()
+                    PreferencesHelper.Direction.NONE     -> "MUTE" to 0xFF95A5A6.toInt()
+                }
+                chatBadge.text = label
+                chatBadge.setTextColor(color)
                 chatBadge.setBackgroundResource(R.drawable.bg_badge_on)
             } else {
                 chatBadge.text = "OFF"
@@ -219,10 +226,12 @@ class ChatListActivity : AppCompatActivity() {
             val popup = PopupMenu(this, anchor)
             popup.menu.add(0, 1, 0, "Export enabled chats")
             popup.menu.add(0, 2, 1, "Import enabled chats")
+            popup.menu.add(0, 3, 2, "Global direction settings")
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     1 -> exportLauncher.launch("tg_enabled_chats.json")
                     2 -> importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                    3 -> showGlobalDirectionDialog()
                 }
                 true
             }
@@ -290,52 +299,104 @@ class ChatListActivity : AppCompatActivity() {
 
         listView.setOnItemLongClickListener { _, _, position, _ ->
             val chat = currentChatsToDisplay[position]
-            fun doLeave(blockBot: Boolean) {
-                if (favChats.contains(chat.id)) {
-                    favChats.remove(chat.id)
-                    PreferencesHelper.removeFavoriteChat(this, chat.id)
+            val options = arrayOf("Direction settings", "Delete / Leave")
+            android.app.AlertDialog.Builder(this)
+                .setTitle(chat.title)
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> showChatDirectionDialog(chat)
+                        1 -> showLeaveDialog(chat)
+                    }
                 }
-                TgClient.leaveChat(chat.id, chat.type, blockBot) { success ->
-                    runOnUiThread {
-                        if (success) {
-                            allChats = allChats.filter { it.id != chat.id }
-                            updateListForTab(tabLayout.selectedTabPosition)
-                            val label = if (blockBot) "Deleted & blocked" else "Removed"
-                            Toast.makeText(this, "$label: ${chat.title}", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(this, "Failed: ${chat.title}", Toast.LENGTH_SHORT).show()
-                        }
+                .show()
+            return@setOnItemLongClickListener true
+        }
+    }
+
+    private fun showGlobalDirectionDialog() {
+        val dirs = PreferencesHelper.Direction.values()
+        val labels = arrayOf("Incoming only", "Outgoing only", "Both directions", "None (mute all)")
+        val current = PreferencesHelper.getGlobalDirection(this)
+        val checked = dirs.indexOf(current)
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Global notification direction")
+            .setSingleChoiceItems(labels, checked) { dialog, which ->
+                PreferencesHelper.setGlobalDirection(this, dirs[which])
+                updateListForTab(tabLayout.selectedTabPosition)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showChatDirectionDialog(chat: TgClient.ChatInfo) {
+        val dirs = arrayOf<PreferencesHelper.Direction?>(null) + PreferencesHelper.Direction.values()
+        val global = PreferencesHelper.getGlobalDirection(this)
+        val labels = arrayOf(
+            "Inherit global (${global.name.lowercase()})",
+            "Incoming only",
+            "Outgoing only",
+            "Both directions",
+            "None (mute)"
+        )
+        val current = PreferencesHelper.getChatDirection(this, chat.id)
+        val checked = if (current == null) 0 else PreferencesHelper.Direction.values().indexOf(current) + 1
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Direction: ${chat.title}")
+            .setSingleChoiceItems(labels, checked) { dialog, which ->
+                PreferencesHelper.setChatDirection(this, chat.id, dirs[which])
+                updateListForTab(tabLayout.selectedTabPosition)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showLeaveDialog(chat: TgClient.ChatInfo) {
+        fun doLeave(blockBot: Boolean) {
+            if (favChats.contains(chat.id)) {
+                favChats.remove(chat.id)
+                PreferencesHelper.removeFavoriteChat(this, chat.id)
+            }
+            TgClient.leaveChat(chat.id, chat.type, blockBot) { success ->
+                runOnUiThread {
+                    if (success) {
+                        allChats = allChats.filter { it.id != chat.id }
+                        updateListForTab(tabLayout.selectedTabPosition)
+                        val label = if (blockBot) "Deleted & blocked" else "Removed"
+                        Toast.makeText(this, "$label: ${chat.title}", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Failed: ${chat.title}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-            when (chat.type) {
-                TgClient.ChatType.BOT -> {
-                    android.app.AlertDialog.Builder(this)
-                        .setTitle("Remove bot \"${chat.title}\"?")
-                        .setMessage("Cannot be undone.")
-                        .setPositiveButton("Delete & Block") { _, _ -> doLeave(true) }
-                        .setNeutralButton("Delete") { _, _ -> doLeave(false) }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                }
-                TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL -> {
-                    android.app.AlertDialog.Builder(this)
-                        .setTitle("Leave \"${chat.title}\"?")
-                        .setMessage("Cannot be undone.")
-                        .setPositiveButton("Leave") { _, _ -> doLeave(false) }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                }
-                else -> {
-                    android.app.AlertDialog.Builder(this)
-                        .setTitle("Delete chat \"${chat.title}\"?")
-                        .setMessage("Cannot be undone.")
-                        .setPositiveButton("Delete") { _, _ -> doLeave(false) }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                }
+        }
+        when (chat.type) {
+            TgClient.ChatType.BOT -> {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Remove bot \"${chat.title}\"?")
+                    .setMessage("Cannot be undone.")
+                    .setPositiveButton("Delete & Block") { _, _ -> doLeave(true) }
+                    .setNeutralButton("Delete") { _, _ -> doLeave(false) }
+                    .setNegativeButton("Cancel", null)
+                    .show()
             }
-            true
+            TgClient.ChatType.GROUP, TgClient.ChatType.CHANNEL -> {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Leave \"${chat.title}\"?")
+                    .setMessage("Cannot be undone.")
+                    .setPositiveButton("Leave") { _, _ -> doLeave(false) }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+            else -> {
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Delete chat \"${chat.title}\"?")
+                    .setMessage("Cannot be undone.")
+                    .setPositiveButton("Delete") { _, _ -> doLeave(false) }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
         }
     }
 

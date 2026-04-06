@@ -21,7 +21,7 @@ object TgClient {
 
     var authStateCallback: ((AuthState) -> Unit)? = null
     var onAuthStateChanged: ((AuthState) -> Unit)? = null  // secondary listener (MainActivity status)
-    var newMessageCallback: ((Long, String, String, String) -> Unit)? = null
+    var newMessageCallback: ((Long, String, String, String, Boolean) -> Unit)? = null
     var onChatsUpdated: (() -> Unit)? = null  // fires on every UpdateNewChat or UpdateChatTitle
 
     var currentAuthState: AuthState = AuthState.WAITING_PARAMETERS
@@ -58,9 +58,10 @@ object TgClient {
                     val chatInfo = cachedChats.find { it.id == chatId }
                     val title = chatInfo?.title ?: "Chat $chatId"
                     val username = chatInfo?.username ?: ""
+                    val isOutgoing = msgUpdate.message.isOutgoing
                     val preview = if (text.length > 80) text.take(80) + "…" else text
-                    AppLogger.d(TAG, "MSG [$title] (id=$chatId): $preview")
-                    newMessageCallback?.invoke(chatId, title, username, text)
+                    AppLogger.d(TAG, "MSG [$title] (id=$chatId, ${if (isOutgoing) "out" else "in"}): $preview")
+                    newMessageCallback?.invoke(chatId, title, username, text, isOutgoing)
                 }
             }
             TdApi.UpdateFile.CONSTRUCTOR -> {
