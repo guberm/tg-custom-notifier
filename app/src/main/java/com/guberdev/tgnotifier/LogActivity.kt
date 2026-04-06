@@ -50,6 +50,18 @@ class LogActivity : AppCompatActivity() {
             etFilter.setText("")
         }
 
+        // Quick filter chips
+        val chips = mapOf(
+            R.id.chipAll   to "",
+            R.id.chipMsg   to "MSG",
+            R.id.chipNotif to "NOTIF",
+            R.id.chipSkip  to "SKIP",
+            R.id.chipErr   to "E/"
+        )
+        chips.forEach { (id, keyword) ->
+            findViewById<Button>(id).setOnClickListener { etFilter.setText(keyword) }
+        }
+
         loadLogs()
         autoRefreshHandler.postDelayed(autoRefreshRunnable, 2000)
 
